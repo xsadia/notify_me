@@ -40,13 +40,6 @@ impl<'a> Client<'a> {
 
         let event_name: String = Input::with_theme(&ColorfulTheme::default())
             .with_prompt("Event name")
-            .validate_with(move |input: &String| -> Result<(), &str> {
-                if !input.is_empty() {
-                    Ok(())
-                } else {
-                    Err("Event name can't be empty")
-                }
-            })
             .interact_text()
             .unwrap();
 
