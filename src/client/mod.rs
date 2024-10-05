@@ -4,6 +4,36 @@ use rusqlite::Connection;
 
 use crate::event::{Event, EventList, RecurrencePattern};
 
+enum Operation {
+    Today,
+    Create,
+    Update,
+    Delete,
+}
+
+impl From<&str> for Operation {
+    fn from(val: &str) -> Self {
+        match val.trim().to_lowercase().as_str() {
+            "today" => Operation::Today,
+            "create" => Operation::Create,
+            "update" => Operation::Update,
+            "delete" => Operation::Delete,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl<'a> From<Operation> for &'a str {
+    fn from(val: Operation) -> Self {
+        match val {
+            Operation::Today => "today",
+            Operation::Create => "create",
+            Operation::Update => "update",
+            Operation::Delete => "delete",
+        }
+    }
+}
+
 pub struct Client<'a> {
     conn: &'a Connection,
 }
@@ -14,18 +44,25 @@ impl<'a> Client<'a> {
     }
 
     pub fn start(&self) {
-        let selections = &["Today", "Create", "Update", "Delete"];
+        let selections: &[&str; 4] = &[
+            Operation::Today.into(),
+            Operation::Create.into(),
+            Operation::Update.into(),
+            Operation::Delete.into(),
+        ];
 
         let selection = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Choose an action")
+            .with_prompt("Choose an operation")
             .default(0)
             .items(&selections[..])
             .interact()
             .unwrap();
 
-        match selections[selection] {
-            "Today" => println!("{}", self.fetch_current_day_events().unwrap()),
-            "Create" => self.create_event().unwrap(),
+        let operation_selection: Operation = Operation::from(selections[selection]);
+
+        match operation_selection {
+            Operation::Today => println!("{}", self.fetch_current_day_events().unwrap()),
+            Operation::Create => self.create_event().unwrap(),
             _ => todo!(),
         }
     }
@@ -79,6 +116,8 @@ impl<'a> Client<'a> {
                 .unwrap()
                 .as_str()
                 .trim()
+                .to_lowercase()
+                .as_str()
             {
                 "daily" => Some(RecurrencePattern::Daily),
                 "weekly" => Some(RecurrencePattern::Weekly),
