@@ -23,7 +23,7 @@ impl From<&str> for Operation {
     }
 }
 
-impl<'a> From<Operation> for &'a str {
+impl From<Operation> for &str {
     fn from(val: Operation) -> Self {
         match val {
             Operation::Today => "today",
@@ -44,21 +44,21 @@ impl<'a> Client<'a> {
     }
 
     pub fn start(&self) {
-        let selections: &[&str; 4] = &[
+        let operations: &[&str; 4] = &[
             Operation::Today.into(),
             Operation::Create.into(),
             Operation::Update.into(),
             Operation::Delete.into(),
         ];
 
-        let selection = Select::with_theme(&ColorfulTheme::default())
+        let operation = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Choose an operation")
             .default(0)
-            .items(&selections[..])
+            .items(&operations[..])
             .interact()
             .unwrap();
 
-        let operation_selection: Operation = Operation::from(selections[selection]);
+        let operation_selection = Operation::from(operations[operation]);
 
         match operation_selection {
             Operation::Today => println!("{}", self.fetch_current_day_events().unwrap()),
@@ -108,27 +108,26 @@ impl<'a> Client<'a> {
             local.with_timezone(&Utc)
         };
 
-        let recurrence: Option<RecurrencePattern> =
-            match Input::<String>::with_theme(&ColorfulTheme::default())
-                .with_prompt("Event recurrence")
-                .allow_empty(true)
-                .interact_text()
-                .unwrap()
-                .as_str()
-                .trim()
-                .to_lowercase()
-                .as_str()
-            {
-                "daily" => Some(RecurrencePattern::Daily),
-                "weekly" => Some(RecurrencePattern::Weekly),
-                "monthly" => Some(RecurrencePattern::Monthly),
-                _ => None,
-            };
+        let recurrences: &[&str; 4] = &[
+            RecurrencePattern::Once.into(),
+            RecurrencePattern::Daily.into(),
+            RecurrencePattern::Weekly.into(),
+            RecurrencePattern::Monthly.into(),
+        ];
+
+        let recurrence = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Choose an operation")
+            .default(0)
+            .items(&recurrences[..])
+            .interact()
+            .unwrap();
+
+        let recurrence_selection = RecurrencePattern::from(recurrences[recurrence]);
 
         match stmt.execute((
             event_name,
             event_description,
-            recurrence,
+            recurrence_selection,
             event_date.with_timezone(&Local).to_rfc3339(),
         )) {
             Ok(_) => Ok(()),
@@ -151,7 +150,7 @@ impl<'a> Client<'a> {
                 id: row.get(0)?,
                 name: row.get(1)?,
                 message: row.get(2)?,
-                recurrence_pattern: row.get(3).ok(),
+                recurrence_pattern: row.get(3)?,
                 date: DateTime::parse_from_rfc3339(&row.get::<_, String>(4)?)
                     .unwrap()
                     .with_timezone(&Local),

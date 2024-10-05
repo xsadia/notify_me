@@ -39,7 +39,7 @@ impl<'a> Scheduler<'a> {
                 id: row.get(0)?,
                 name: row.get(1)?,
                 message: row.get(2)?,
-                recurrence_pattern: row.get(3).ok(),
+                recurrence_pattern: row.get(3)?,
                 date: DateTime::parse_from_rfc3339(&row.get::<_, String>(4)?)
                     .unwrap()
                     .with_timezone(&Local),
@@ -68,12 +68,15 @@ impl<'a> Scheduler<'a> {
                 Err(err) => return Err(err.to_string()),
             }
 
-            if event.recurrence_pattern.is_some() {
-                match self.update_event_date(event) {
-                    Ok(_) => return Ok(()),
-                    Err(err) => return Err(err.to_string()),
-                };
-            }
+            match event.recurrence_pattern {
+                RecurrencePattern::Once => (),
+                _ => {
+                    match self.update_event_date(event) {
+                        Ok(_) => return Ok(()),
+                        Err(err) => return Err(err.to_string()),
+                    };
+                }
+            };
         }
 
         Ok(())
@@ -89,9 +92,9 @@ impl<'a> Scheduler<'a> {
         };
 
         let new_date = match event.recurrence_pattern {
-            Some(RecurrencePattern::Daily) => event.date + Duration::days(1),
-            Some(RecurrencePattern::Weekly) => event.date + Duration::weeks(1),
-            Some(RecurrencePattern::Monthly) => {
+            RecurrencePattern::Daily => event.date + Duration::days(1),
+            RecurrencePattern::Weekly => event.date + Duration::weeks(1),
+            RecurrencePattern::Monthly => {
                 let next_month = event.date.month() % 12 + 1; // wraps around after December
                 let next_year = if next_month == 1 {
                     event.date.year() + 1
@@ -106,7 +109,7 @@ impl<'a> Scheduler<'a> {
                     .with_month(next_month)
                     .unwrap_or(event.date)
             }
-            _ => return Err(String::from("No recurrence pattern")),
+            _ => unreachable!(),
         };
 
         match stmt.execute((new_date.to_rfc3339(), event.id)) {

@@ -11,6 +11,29 @@ pub enum RecurrencePattern {
     Daily,
     Weekly,
     Monthly,
+    Once,
+}
+
+impl From<&str> for RecurrencePattern {
+    fn from(value: &str) -> Self {
+        match value.trim().to_lowercase().as_str() {
+            "daily" => RecurrencePattern::Daily,
+            "weekly" => RecurrencePattern::Weekly,
+            "monthly" => RecurrencePattern::Monthly,
+            _ => RecurrencePattern::Once,
+        }
+    }
+}
+
+impl From<RecurrencePattern> for &str {
+    fn from(value: RecurrencePattern) -> Self {
+        match value {
+            RecurrencePattern::Daily => "daily",
+            RecurrencePattern::Weekly => "weekly",
+            RecurrencePattern::Monthly => "monthly",
+            RecurrencePattern::Once => "once",
+        }
+    }
 }
 
 impl FromSql for RecurrencePattern {
@@ -41,6 +64,9 @@ impl ToSql for RecurrencePattern {
             RecurrencePattern::Monthly => Ok(rusqlite::types::ToSqlOutput::Owned(
                 rusqlite::types::Value::Text(String::from("monthly")),
             )),
+            RecurrencePattern::Once => Ok(rusqlite::types::ToSqlOutput::Owned(
+                rusqlite::types::Value::Text(String::from("one time")),
+            )),
         }
     }
 }
@@ -51,7 +77,7 @@ pub struct Event {
     pub id: i32,
     pub name: String,
     pub message: String,
-    pub recurrence_pattern: Option<RecurrencePattern>,
+    pub recurrence_pattern: RecurrencePattern,
     pub date: DateTime<Local>,
     #[allow(unused)]
     pub deleted_at: Option<DateTime<Utc>>,
@@ -60,10 +86,10 @@ pub struct Event {
 impl fmt::Display for Event {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let recurrence = match self.recurrence_pattern {
-            Some(RecurrencePattern::Daily) => "daily",
-            Some(RecurrencePattern::Weekly) => "weekly",
-            Some(RecurrencePattern::Monthly) => "monthly",
-            None => "once",
+            RecurrencePattern::Daily => "daily",
+            RecurrencePattern::Weekly => "weekly",
+            RecurrencePattern::Monthly => "monthly",
+            RecurrencePattern::Once => "once",
         };
 
         write!(
