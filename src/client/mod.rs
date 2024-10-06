@@ -105,6 +105,7 @@ impl<'a> Client<'a> {
             let naive_date = NaiveDateTime::parse_from_str(&event_date_input, date_format)
                 .expect("Failed to parse date");
             let local = Local.from_local_datetime(&naive_date).unwrap();
+
             local.with_timezone(&Utc)
         };
 
@@ -128,7 +129,7 @@ impl<'a> Client<'a> {
             event_name,
             event_description,
             recurrence_selection,
-            event_date.with_timezone(&Local).to_rfc3339(),
+            event_date.to_rfc3339(),
         )) {
             Ok(_) => Ok(()),
             Err(err) => Err(err.to_string()),
@@ -137,8 +138,8 @@ impl<'a> Client<'a> {
 
     fn fetch_current_day_events(&self) -> Result<EventList, String> {
         let mut stmt = match self.conn.prepare(
-            "SELECT id, name, message, recurrence_pattern, date, deleted_at FROM events \
-       WHERE strftime('%Y-%m-%d', date) = strftime('%Y-%m-%d', 'now') \
+            "SELECT id, name, message, recurrence_pattern, date, deleted_at FROM events
+       WHERE strftime('%Y-%m-%d', date) = strftime('%Y-%m-%d', 'now')
        AND deleted_at IS NULL;",
         ) {
             Ok(stmt) => stmt,

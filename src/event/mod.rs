@@ -40,6 +40,7 @@ impl FromSql for RecurrencePattern {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         match String::column_result(value) {
             Ok(recurrence_pattern) => match recurrence_pattern.as_str() {
+                "once" => Ok(RecurrencePattern::Once),
                 "daily" => Ok(RecurrencePattern::Daily),
                 "weekly" => Ok(RecurrencePattern::Weekly),
                 "monthly" => Ok(RecurrencePattern::Monthly),
@@ -65,7 +66,7 @@ impl ToSql for RecurrencePattern {
                 rusqlite::types::Value::Text(String::from("monthly")),
             )),
             RecurrencePattern::Once => Ok(rusqlite::types::ToSqlOutput::Owned(
-                rusqlite::types::Value::Text(String::from("one time")),
+                rusqlite::types::Value::Text(String::from("once")),
             )),
         }
     }

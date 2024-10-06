@@ -26,8 +26,8 @@ impl<'a> Scheduler<'a> {
     fn check_and_notify(&self) -> Result<(), String> {
         let mut stmt = match self.conn.prepare(
             "SELECT id, name, message, recurrence_pattern, date, deleted_at FROM events \
-           WHERE strftime('%Y-%m-%d %H:%M', date) = strftime('%Y-%m-%d %H:%M', 'now') \
-           OR strftime('%Y-%m-%d %H:%M', date) = strftime('%Y-%m-%d %H:%M', datetime('now', '+10 minutes'))
+           WHERE (strftime('%Y-%m-%d %H:%M', date) = strftime('%Y-%m-%d %H:%M', 'now') \
+           OR strftime('%Y-%m-%d %H:%M', date) = strftime('%Y-%m-%d %H:%M', datetime('now', '+10 minutes')))
            AND deleted_at IS NULL;",
         ) {
             Ok(stmt) => stmt,
@@ -123,9 +123,11 @@ impl<'a> Scheduler<'a> {
 
         loop {
             interval.tick().await;
-            info!("tick");
+            info!("Starting tick");
             if let Err(err) = self.check_and_notify() {
                 error!("{}", err);
+            } else {
+                info!("Successfully ticked")
             }
         }
     }

@@ -30,7 +30,7 @@ async fn main() -> Result<(), String> {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             message TEXT NOT NULL,
-            recurrence_pattern TEXT,
+            recurrence_pattern TEXT NOT NULL,
             date TEXT NOT NULL,
             deleted_at TEXT DEFAULT NULL
         )",
